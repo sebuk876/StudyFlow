@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyFlow — Student Organizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0A0F;
+  --surface: #13131A;
+  --surface2: #1C1C27;
+  --border: rgba(255,255,255,0.07);
+  --text: #F0F0FF;
+  --muted: #6B6B8A;
+  --accent1: #7C5CFC; /* purple */
+  --accent2: #FC5C7D; /* pink */
+  --accent3: #5CF0B0; /* mint */
+  --accent4: #FCB95C; /* amber */
+  --accent5: #5CB8FC; /* blue */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(124,92,252,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(252,92,125,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(92,240,176,0.04) 0%, transparent 60%);
+  animation: bgShift 15s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes bgShift {
+  0% { transform: translate(0,0) rotate(0deg); }
+  100% { transform: translate(2%, 2%) rotate(3deg); }
+}
+
+/* LAYOUT */
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 60px 1fr;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  background: rgba(10,10,15,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.logo {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.logo span { color: var(--accent1); }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.date-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--surface);
+  padding: 0.4rem 0.9rem;
+  border-radius: 2rem;
+  border: 1px solid var(--border);
+}
+
+.avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sidebar-section {
+  padding: 0 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.nav-item.active {
+  color: var(--text);
+  background: var(--surface2);
+  border-color: var(--border);
+}
+
+.nav-item .icon { font-size: 1.1rem; }
+
+.nav-dot {
+  margin-left: auto;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+
+/* MAIN */
+main {
+  padding: 2rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 60px);
+}
+
+/* TABS */
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* DASHBOARD */
+.dash-greeting {
+  margin-bottom: 2rem;
+}
+
+.dash-greeting h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.3rem;
+}
+
+.dash-greeting p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-family: 'DM Mono', monospace;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.2rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.stat-card:hover { transform: translateY(-2px); }
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.stat-card.c1::before { background: var(--accent1); }
+.stat-card.c2::before { background: var(--accent2); }
+.stat-card.c3::before { background: var(--accent3); }
+.stat-card.c4::before { background: var(--accent4); }
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.2rem;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.2rem;
+  padding: 1.5rem;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.card-action {
+  font-size: 0.75rem;
+  color: var(--accent1);
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  transition: opacity 0.2s;
+}
+
+.card-action:hover { opacity: 0.7; }
+
+/* HOMEWORK ITEMS */
+.hw-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.hw-item:last-child { border-bottom: none; }
+
+.hw-check {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.hw-check.done {
+  background: var(--accent3);
+  border-color: var(--accent3);
+}
+
+.hw-check.done::after { content: '✓'; font-size: 0.65rem; color: #000; }
+
+.hw-info { flex: 1; }
+
+.hw-subject {
+  font-size: 0.72rem;
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 0.15rem;
+}
+
+.hw-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.hw-item.done .hw-title {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.hw-due {
+  font-size: 0.7rem;
+  font-family: 'DM Mono', monospace;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  background: var(--surface2);
+}
+
+.hw-due.urgent { background: rgba(252,92,125,0.15); color: var(--accent2); }
+.hw-due.soon { background: rgba(252,185,92,0.15); color: var(--accent4); }
+.hw-due.ok { background: rgba(92,240,176,0.15); color: var(--accent3); }
+
+/* UPCOMING EVENTS */
+.event-item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+
+.event-item:last-child { border-bottom: none; }
+
+.event-date-box {
+  background: var(--surface2);
+  border-radius: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  text-align: center;
+  min-width: 44px;
+  flex-shrink: 0;
+}
+
+.event-month {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.event-day {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.event-info { flex: 1; }
+
+.event-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.event-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+.event-tag {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+}
+
+/* CALENDAR TAB */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.calendar-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.cal-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cal-btn {
+  width: 36px; height: 36px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.cal-btn:hover { background: var(--surface2); border-color: var(--accent1); }
+
+.calendar-grid-wrapper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.2rem;
+  overflow: hidden;
+}
+
+.cal-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.cal-day-name {
+  padding: 0.8rem;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cal-cell {
+  min-height: 90px;
+  padding: 0.6rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.cal-cell:hover { background: var(--surface2); }
+.cal-cell.other-month { opacity: 0.3; }
+.cal-cell.today { background: rgba(124,92,252,0.1); }
+.cal-cell.today .cal-date { color: var(--accent1); }
+
+.cal-date {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.cal-event-dot {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.3rem;
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'DM Mono', monospace;
+}
+
+/* HOMEWORK TAB */
+.hw-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hw-search {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding: 0.7rem 1rem;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.hw-search:focus { border-color: var(--accent1); }
+.hw-search::placeholder { color: var(--muted); }
+
+.btn {
+  padding: 0.7rem 1.3rem;
+  border-radius: 0.7rem;
+  border: none;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent1);
+  color: white;
+}
+
+.btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+
+.filter-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.pill {
+  padding: 0.35rem 0.9rem;
+  border-radius: 2rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  transition: all 0.2s;
+}
+
+.pill.active, .pill:hover {
+  border-color: var(--accent1);
+  color: var(--accent1);
+  background: rgba(124,92,252,0.1);
+}
+
+.hw-full-list { display: flex; flex-direction: column; gap: 0.7rem; }
+
+.hw-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.hw-card:hover {
+  border-color: rgba(124,92,252,0.3);
+  transform: translateX(4px);
+}
+
+.hw-card.completed { opacity: 0.5; }
+
+.hw-card-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.hw-card-check.done { background: var(--accent3); border-color: var(--accent3); }
+.hw-card-check.done::after { content: '✓'; font-size: 0.7rem; color: #000; }
+
+.hw-card-body { flex: 1; }
+
+.hw-card-subject {
+  font-size: 0.7rem;
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 0.2rem;
+}
+
+.hw-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.hw-card-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+  font-family: 'DM Mono', monospace;
+}
+
+.hw-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.priority-badge {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+}
+
+.p-high { background: rgba(252,92,125,0.15); color: var(--accent2); }
+.p-med { background: rgba(252,185,92,0.15); color: var(--accent4); }
+.p-low { background: rgba(92,240,176,0.15); color: var(--accent3); }
+
+/* ADD HOMEWORK MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 480px;
+  animation: modalIn 0.3s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.72rem;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.form-input, .form-select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding: 0.7rem 1rem;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus, .form-select:focus { border-color: var(--accent1); }
+.form-select option { background: var(--surface2); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.modal-footer {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+/* EXTRACURRICULARS */
+.extras-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.2rem;
+}
+
+.extra-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.2rem;
+  padding: 1.5rem;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.extra-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+
+.extra-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+
+.extra-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.extra-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 0.3rem;
+  letter-spacing: -0.01em;
+}
+
+.extra-schedule {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 1rem;
+}
+
+.extra-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.extra-tag {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+  font-family: 'DM Mono', monospace;
+}
+
+.extra-notes {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.6;
+  font-family: 'DM Mono', monospace;
+}
+
+/* PROGRESS BAR */
+.progress-bar {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="hwModal">
+  <div class="modal">
+    <h3>➕ Add Assignment</h3>
+    <div class="form-group">
+      <label class="form-label">Assignment Title</label>
+      <input class="form-input" id="newHwTitle" placeholder="e.g. Chapter 5 Essay">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <select class="form-select" id="newHwSubject">
+          <option>AP Biology</option>
+          <option>AP Calculus</option>
+          <option>AP Chemistry</option>
+          <option>AP History</option>
+          <option>AP Lang & Comp</option>
+          <option>Psychology</option>
+          <option>Spanish</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Priority</label>
+        <select class="form-select" id="newHwPriority">
+          <option value="high">🔴 High</option>
+          <option value="med">🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Due Date</label>
+        <input class="form-input" id="newHwDate" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Est. Time</label>
+        <select class="form-select" id="newHwTime">
+          <option>15 min</option>
+          <option>30 min</option>
+          <option>1 hour</option>
+          <option>2 hours</option>
+          <option>3+ hours</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <input class="form-input" id="newHwNotes" placeholder="Any extra details...">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addHomework()">Add Assignment</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo">Study<span>Flow</span></div>
+    <div class="header-right">
+      <div class="date-badge" id="headerDate"></div>
+      <div class="avatar">S</div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Menu</div>
+      <div class="nav-item active" onclick="switchTab('dashboard', this)">
+        <span class="icon">🏠</span> Dashboard
+        <span class="nav-dot" style="background:var(--accent1)"></span>
+      </div>
+      <div class="nav-item" onclick="switchTab('calendar', this)">
+        <span class="icon">📅</span> Calendar
+      </div>
+      <div class="nav-item" onclick="switchTab('homework', this)">
+        <span class="icon">📚</span> Homework
+        <span class="nav-dot" style="background:var(--accent2)" id="hwBadge"></span>
+      </div>
+      <div class="nav-item" onclick="switchTab('extras', this)">
+        <span class="icon">🏆</span> Extracurriculars
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="margin-top:auto">
+      <div class="sidebar-label">Subjects</div>
+      <div class="nav-item" style="font-size:0.8rem"><span style="color:var(--accent1)">●</span> &nbsp;AP Biology</div>
+      <div class="nav-item" style="font-size:0.8rem"><span style="color:var(--accent2)">●</span> &nbsp;AP Calculus</div>
+      <div class="nav-item" style="font-size:0.8rem"><span style="color:var(--accent3)">●</span> &nbsp;AP Chemistry</div>
+      <div class="nav-item" style="font-size:0.8rem"><span style="color:var(--accent4)">●</span> &nbsp;AP History</div>
+      <div class="nav-item" style="font-size:0.8rem"><span style="color:var(--accent5)">●</span> &nbsp;Psychology</div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main>
+
+    <!-- DASHBOARD -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="dash-greeting">
+        <h1 id="greetingText">Good morning, Sebastian 👋</h1>
+        <p id="greetingSub">You have 3 assignments due this week. Stay focused!</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card c1">
+          <div class="stat-number" id="statPending">5</div>
+          <div class="stat-label">Pending Tasks</div>
+        </div>
+        <div class="stat-card c2">
+          <div class="stat-number" id="statUrgent">2</div>
+          <div class="stat-label">Due This Week</div>
+        </div>
+        <div class="stat-card c3">
+          <div class="stat-number" id="statDone">3</div>
+          <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card c4">
+          <div class="stat-number">4</div>
+          <div class="stat-label">Extracurriculars</div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📚 Recent Assignments</div>
+            <div class="card-action" onclick="switchTab('homework', document.querySelector('[onclick*=homework]'))">View all →</div>
+          </div>
+          <div id="dashHwList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📅 Upcoming Events</div>
+            <div class="card-action" onclick="switchTab('calendar', document.querySelector('[onclick*=calendar]'))">Full calendar →</div>
+          </div>
+          <div class="event-item">
+            <div class="event-date-box">
+              <div class="event-month">Mar</div>
+              <div class="event-day">12</div>
+            </div>
+            <div class="event-info">
+              <div class="event-title">Water Polo Practice</div>
+              <div class="event-meta">3:30 PM · Rose Bowl Aquatics</div>
+            </div>
+            <span class="event-tag" style="background:rgba(92,184,252,0.15);color:var(--accent5)">Sport</span>
+          </div>
+          <div class="event-item">
+            <div class="event-date-box">
+              <div class="event-month">Mar</div>
+              <div class="event-day">14</div>
+            </div>
+            <div class="event-info">
+              <div class="event-title">Psychology Club Meeting</div>
+              <div class="event-meta">Lunch · Room G207</div>
+            </div>
+            <span class="event-tag" style="background:rgba(124,92,252,0.15);color:var(--accent1)">Club</span>
+          </div>
+          <div class="event-item">
+            <div class="event-date-box">
+              <div class="event-month">Mar</div>
+              <div class="event-day">17</div>
+            </div>
+            <div class="event-info">
+              <div class="event-title">AP Calculus Exam</div>
+              <div class="event-meta">8:00 AM · Room 204</div>
+            </div>
+            <span class="event-tag" style="background:rgba(252,92,125,0.15);color:var(--accent2)">Exam</span>
+          </div>
+          <div class="event-item">
+            <div class="event-date-box">
+              <div class="event-month">Mar</div>
+              <div class="event-day">21</div>
+            </div>
+            <div class="event-info">
+              <div class="event-title">Swim Instructor Shift</div>
+              <div class="event-meta">10:00 AM · Rose Bowl</div>
+            </div>
+            <span class="event-tag" style="background:rgba(92,240,176,0.15);color:var(--accent3)">Work</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="tab-content" id="tab-calendar">
+      <div class="calendar-header">
+        <h2 id="calMonthYear">March 2026</h2>
+        <div class="cal-nav">
+          <button class="cal-btn" onclick="changeMonth(-1)">←</button>
+          <button class="cal-btn" onclick="changeMonth(1)">→</button>
+        </div>
+      </div>
+      <div class="calendar-grid-wrapper">
+        <div class="cal-days-header">
+          <div class="cal-day-name">Sun</div>
+          <div class="cal-day-name">Mon</div>
+          <div class="cal-day-name">Tue</div>
+          <div class="cal-day-name">Wed</div>
+          <div class="cal-day-name">Thu</div>
+          <div class="cal-day-name">Fri</div>
+          <div class="cal-day-name">Sat</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+
+    <!-- HOMEWORK -->
+    <div class="tab-content" id="tab-homework">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+        <h2 style="font-size:1.5rem;font-weight:800;letter-spacing:-0.03em">📚 Assignments</h2>
+        <button class="btn btn-primary" onclick="openModal()">+ Add Assignment</button>
+      </div>
+      <div class="hw-controls">
+        <input class="hw-search" placeholder="🔍  Search assignments..." oninput="filterHomework(this.value)">
+      </div>
+      <div class="filter-pills">
+        <div class="pill active" onclick="filterByStatus('all', this)">All</div>
+        <div class="pill" onclick="filterByStatus('pending', this)">Pending</div>
+        <div class="pill" onclick="filterByStatus('completed', this)">Completed</div>
+        <div class="pill" onclick="filterBySubject('AP Biology', this)" style="border-color:rgba(124,92,252,0.3)">AP Biology</div>
+        <div class="pill" onclick="filterBySubject('AP Calculus', this)">AP Calculus</div>
+        <div class="pill" onclick="filterBySubject('AP Chemistry', this)">AP Chemistry</div>
+      </div>
+      <div class="hw-full-list" id="hwFullList"></div>
+    </div>
+
+    <!-- EXTRACURRICULARS -->
+    <div class="tab-content" id="tab-extras">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+        <h2 style="font-size:1.5rem;font-weight:800;letter-spacing:-0.03em">🏆 Extracurriculars</h2>
+      </div>
+      <div class="extras-grid">
+        <div class="extra-card" style="border-color:rgba(92,184,252,0.25)">
+          <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent5);border-radius:1.2rem 1.2rem 0 0"></div>
+          <div class="extra-icon">🤽</div>
+          <div class="extra-name">Water Polo — Varsity</div>
+          <div class="extra-schedule">Mon–Fri · 3:30–5:30 PM · Rose Bowl</div>
+          <div class="extra-tags">
+            <span class="extra-tag" style="background:rgba(92,184,252,0.15);color:var(--accent5)">Captain</span>
+            <span class="extra-tag" style="background:rgba(92,240,176,0.15);color:var(--accent3)">MVP</span>
+            <span class="extra-tag" style="background:rgba(252,185,92,0.15);color:var(--accent4)">3 Years</span>
+          </div>
+          <div class="extra-notes">Pacific League Honorable Mention. Led team practices during Eaton Fire school closure.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:90%;background:var(--accent5)"></div></div>
+        </div>
+
+        <div class="extra-card" style="border-color:rgba(124,92,252,0.25)">
+          <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent1);border-radius:1.2rem 1.2rem 0 0"></div>
+          <div class="extra-icon">🧠</div>
+          <div class="extra-name">Psychology Club</div>
+          <div class="extra-schedule">Every Monday · Lunch · Room G207</div>
+          <div class="extra-tags">
+            <span class="extra-tag" style="background:rgba(124,92,252,0.15);color:var(--accent1)">Representative</span>
+            <span class="extra-tag" style="background:rgba(92,240,176,0.15);color:var(--accent3)">Founded 2025</span>
+          </div>
+          <div class="extra-notes">Club representative. Helps organize weekly curriculum and discussions on mental health and behavior.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:70%;background:var(--accent1)"></div></div>
+        </div>
+
+        <div class="extra-card" style="border-color:rgba(92,240,176,0.25)">
+          <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent3);border-radius:1.2rem 1.2rem 0 0"></div>
+          <div class="extra-icon">🏊</div>
+          <div class="extra-name">Swim Instructor</div>
+          <div class="extra-schedule">Weekends · Rose Bowl Aquatics Center</div>
+          <div class="extra-tags">
+            <span class="extra-tag" style="background:rgba(92,240,176,0.15);color:var(--accent3)">Part-Time Job</span>
+            <span class="extra-tag" style="background:rgba(252,185,92,0.15);color:var(--accent4)">Youth Dev</span>
+          </div>
+          <div class="extra-notes">Teaching youth swimmers stroke mechanics and water safety. Applying entrepreneurial skills to coaching.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:55%;background:var(--accent3)"></div></div>
+        </div>
+
+        <div class="extra-card" style="border-color:rgba(252,185,92,0.25)">
+          <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent4);border-radius:1.2rem 1.2rem 0 0"></div>
+          <div class="extra-icon">🌱</div>
+          <div class="extra-name">Altadena ReGreen Program</div>
+          <div class="extra-schedule">Weekends · Altadena Community</div>
+          <div class="extra-tags">
+            <span class="extra-tag" style="background:rgba(252,185,92,0.15);color:var(--accent4)">Volunteer</span>
+            <span class="extra-tag" style="background:rgba(92,240,176,0.15);color:var(--accent3)">2025–Present</span>
+          </div>
+          <div class="extra-notes">Community recovery and environmental restoration post-Eaton Fire. Consistent volunteer hours.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:80%;background:var(--accent4)"></div></div>
+        </div>
+
+        <div class="extra-card" style="border-color:rgba(252,92,125,0.25)">
+          <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent2);border-radius:1.2rem 1.2rem 0 0"></div>
+          <div class="extra-icon">❤️</div>
+          <div class="extra-name">Peer Health Advocate</div>
+          <div class="extra-schedule">Ongoing · Pasadena High School</div>
+          <div class="extra-tags">
+            <span class="extra-tag" style="background:rgba(252,92,125,0.15);color:var(--accent2)">2 Years</span>
+            <span class="extra-tag" style="background:rgba(124,92,252,0.15);color:var(--accent1)">Leadership</span>
+          </div>
+          <div class="extra-notes">Delivering health education and wellness programming to peers. Strong communicator presenting to all ages.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--accent2)"></div></div>
+        </div>
+
+        <div class="extra-card" style="border-color:rgba(92,184,252,0.15);border-style:dashed;cursor:pointer" onclick="alert('Feature coming soon! You will be able to add new extracurriculars here.')">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:180px;color:var(--muted);gap:0.8rem">
+            <div style="font-size:2rem">➕</div>
+            <div style="font-size:0.85rem;font-family:'DM Mono',monospace">Add Activity</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+let homework = [
+  { id:1, title:'Chapter 7 Reading Notes', subject:'AP Biology', priority:'high', due:'2026-03-13', time:'1 hour', notes:'Focus on cell division', done:false },
+  { id:2, title:'Problem Set 4', subject:'AP Calculus', priority:'high', due:'2026-03-15', time:'2 hours', notes:'Integration by parts', done:false },
+  { id:3, title:'Lab Report — Titration', subject:'AP Chemistry', priority:'med', due:'2026-03-18', time:'3+ hours', notes:'Include error analysis', done:false },
+  { id:4, title:'DBQ Essay Draft', subject:'AP History', priority:'med', due:'2026-03-20', time:'2 hours', notes:'Focus on thesis', done:false },
+  { id:5, title:'Rhetorical Analysis', subject:'AP Lang & Comp', priority:'low', due:'2026-03-25', time:'1 hour', notes:'', done:false },
+  { id:6, title:'Vocab Quiz Prep', subject:'Spanish', priority:'low', due:'2026-03-12', time:'30 min', notes:'Chapter 9 vocab', done:true },
+  { id:7, title:'Psychology Club Presentation', subject:'Psychology', priority:'med', due:'2026-03-17', time:'1 hour', notes:'Week 3 mental health topic', done:true },
+  { id:8, title:'Extra Credit Problems', subject:'AP Calculus', priority:'low', due:'2026-03-28', time:'30 min', notes:'', done:true },
+];
+
+let currentFilter = 'all';
+let currentSubjectFilter = '';
+let calYear = 2026, calMonth = 2; // March 2026 (0-indexed)
+
+const calEvents = {
+  '2026-3-11': [{ text:'Psych Club', color:'var(--accent1)' }],
+  '2026-3-12': [{ text:'Water Polo', color:'var(--accent5)' }],
+  '2026-3-14': [{ text:'Psych Club', color:'var(--accent1)' }],
+  '2026-3-17': [{ text:'Calc Exam', color:'var(--accent2)' }],
+  '2026-3-19': [{ text:'Water Polo', color:'var(--accent5)' }],
+  '2026-3-21': [{ text:'Swim Shift', color:'var(--accent3)' }],
+  '2026-3-25': [{ text:'ReGreen Vol.', color:'var(--accent4)' }],
+};
+
+// ── INIT ──────────────────────────────────────────────
+window.onload = () => {
+  setGreeting();
+  renderDashHw();
+  renderCalendar();
+  renderHwList();
+  updateStats();
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+};
+
+function setGreeting() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greetingText').textContent = `${greet}, Sebastian 👋`;
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ── STATS ─────────────────────────────────────────────
+function updateStats() {
+  const pending = homework.filter(h => !h.done).length;
+  const done = homework.filter(h => h.done).length;
+  const now = new Date();
+  const urgent = homework.filter(h => {
+    if (h.done) return false;
+    const d = new Date(h.due);
+    return (d - now) / (1000*60*60*24) <= 7;
+  }).length;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statUrgent').textContent = urgent;
+}
+
+// ── DASHBOARD HW ──────────────────────────────────────
+function renderDashHw() {
+  const list = document.getElementById('dashHwList');
+  const items = homework.slice(0, 5);
+  list.innerHTML = items.map(h => {
+    const daysLeft = Math.ceil((new Date(h.due) - new Date()) / (1000*60*60*24));
+    const dueClass = daysLeft <= 2 ? 'urgent' : daysLeft <= 5 ? 'soon' : 'ok';
+    const dueText = daysLeft < 0 ? 'Overdue' : daysLeft === 0 ? 'Today' : `${daysLeft}d left`;
+    const subjectColors = { 'AP Biology':'var(--accent1)', 'AP Calculus':'var(--accent2)', 'AP Chemistry':'var(--accent3)', 'AP History':'var(--accent4)', 'AP Lang & Comp':'var(--accent5)', 'Psychology':'var(--accent1)', 'Spanish':'var(--accent4)' };
+    return `<div class="hw-item ${h.done ? 'done' : ''}">
+      <div class="hw-check ${h.done ? 'done' : ''}" onclick="toggleHw(${h.id})"></div>
+      <div class="hw-info">
+        <div class="hw-subject" style="color:${subjectColors[h.subject] || 'var(--muted)'}">${h.subject}</div>
+        <div class="hw-title">${h.title}</div>
+      </div>
+      ${!h.done ? `<div class="hw-due ${dueClass}">${dueText}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── HW LIST ───────────────────────────────────────────
+function renderHwList() {
+  const list = document.getElementById('hwFullList');
+  let filtered = homework;
+  if (currentFilter === 'pending') filtered = filtered.filter(h => !h.done);
+  if (currentFilter === 'completed') filtered = filtered.filter(h => h.done);
+  if (currentSubjectFilter) filtered = filtered.filter(h => h.subject === currentSubjectFilter);
+
+  const subjectColors = { 'AP Biology':'var(--accent1)', 'AP Calculus':'var(--accent2)', 'AP Chemistry':'var(--accent3)', 'AP History':'var(--accent4)', 'AP Lang & Comp':'var(--accent5)', 'Psychology':'var(--accent1)', 'Spanish':'var(--accent4)', 'Other':'var(--muted)' };
+
+  list.innerHTML = filtered.map(h => {
+    const daysLeft = Math.ceil((new Date(h.due) - new Date()) / (1000*60*60*24));
+    const dueText = daysLeft < 0 ? 'Overdue' : daysLeft === 0 ? 'Due Today' : `Due in ${daysLeft}d`;
+    const pClass = h.priority === 'high' ? 'p-high' : h.priority === 'med' ? 'p-med' : 'p-low';
+    const pText = h.priority === 'high' ? '🔴 High' : h.priority === 'med' ? '🟡 Medium' : '🟢 Low';
+    return `<div class="hw-card ${h.done ? 'completed' : ''}">
+      <div class="hw-card-check ${h.done ? 'done' : ''}" onclick="toggleHw(${h.id})"></div>
+      <div class="hw-card-body">
+        <div class="hw-card-subject" style="color:${subjectColors[h.subject] || 'var(--muted)'}">${h.subject}</div>
+        <div class="hw-card-title" style="${h.done ? 'text-decoration:line-through;color:var(--muted)' : ''}">${h.title}</div>
+        ${h.notes ? `<div class="hw-card-desc">${h.notes} · ${h.time}</div>` : `<div class="hw-card-desc">${h.time}</div>`}
+      </div>
+      <div class="hw-card-meta">
+        <span class="priority-badge ${pClass}">${pText}</span>
+        <span style="font-size:0.7rem;font-family:'DM Mono',monospace;color:var(--muted)">${dueText}</span>
+      </div>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);text-align:center;padding:3rem;font-family:\'DM Mono\',monospace;font-size:0.85rem">No assignments found ✨</div>';
+}
+
+function toggleHw(id) {
+  const h = homework.find(x => x.id === id);
+  if (h) { h.done = !h.done; renderDashHw(); renderHwList(); updateStats(); }
+}
+
+function filterByStatus(status, el) {
+  currentFilter = status;
+  currentSubjectFilter = '';
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderHwList();
+}
+
+function filterBySubject(subject, el) {
+  currentSubjectFilter = currentSubjectFilter === subject ? '' : subject;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  if (currentSubjectFilter) el.classList.add('active');
+  else document.querySelector('.pill').classList.add('active');
+  renderHwList();
+}
+
+function filterHomework(query) {
+  const list = document.getElementById('hwFullList');
+  const q = query.toLowerCase();
+  const filtered = homework.filter(h => h.title.toLowerCase().includes(q) || h.subject.toLowerCase().includes(q));
+  const subjectColors = { 'AP Biology':'var(--accent1)', 'AP Calculus':'var(--accent2)', 'AP Chemistry':'var(--accent3)', 'AP History':'var(--accent4)', 'AP Lang & Comp':'var(--accent5)', 'Psychology':'var(--accent1)', 'Spanish':'var(--accent4)', 'Other':'var(--muted)' };
+  list.innerHTML = filtered.map(h => {
+    const daysLeft = Math.ceil((new Date(h.due) - new Date()) / (1000*60*60*24));
+    const dueText = daysLeft < 0 ? 'Overdue' : daysLeft === 0 ? 'Due Today' : `Due in ${daysLeft}d`;
+    const pClass = h.priority === 'high' ? 'p-high' : h.priority === 'med' ? 'p-med' : 'p-low';
+    const pText = h.priority === 'high' ? '🔴 High' : h.priority === 'med' ? '🟡 Medium' : '🟢 Low';
+    return `<div class="hw-card ${h.done ? 'completed' : ''}">
+      <div class="hw-card-check ${h.done ? 'done' : ''}" onclick="toggleHw(${h.id})"></div>
+      <div class="hw-card-body">
+        <div class="hw-card-subject" style="color:${subjectColors[h.subject] || 'var(--muted)'}">${h.subject}</div>
+        <div class="hw-card-title">${h.title}</div>
+        <div class="hw-card-desc">${h.notes || ''} · ${h.time}</div>
+      </div>
+      <div class="hw-card-meta">
+        <span class="priority-badge ${pClass}">${pText}</span>
+        <span style="font-size:0.7rem;font-family:'DM Mono',monospace;color:var(--muted)">${dueText}</span>
+      </div>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);text-align:center;padding:3rem;font-family:\'DM Mono\',monospace;font-size:0.85rem">No results found</div>';
+}
+
+// ── MODAL ─────────────────────────────────────────────
+function openModal() { document.getElementById('hwModal').classList.add('open'); }
+function closeModal() { document.getElementById('hwModal').classList.remove('open'); }
+
+document.getElementById('hwModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function addHomework() {
+  const title = document.getElementById('newHwTitle').value.trim();
+  if (!title) { alert('Please enter a title!'); return; }
+  const newHw = {
+    id: Date.now(),
+    title,
+    subject: document.getElementById('newHwSubject').value,
+    priority: document.getElementById('newHwPriority').value,
+    due: document.getElementById('newHwDate').value || new Date().toISOString().split('T')[0],
+    time: document.getElementById('newHwTime').value,
+    notes: document.getElementById('newHwNotes').value,
+    done: false
+  };
+  homework.unshift(newHw);
+  closeModal();
+  renderDashHw();
+  renderHwList();
+  updateStats();
+  document.getElementById('newHwTitle').value = '';
+  document.getElementById('newHwNotes').value = '';
+}
+
+// ── CALENDAR ──────────────────────────────────────────
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthYear').textContent = `${months[calMonth]} ${calYear}`;
+  const grid = document.getElementById('calGrid');
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date();
+  let cells = '';
+  for (let i = firstDay - 1; i >= 0; i--) {
+    cells += `<div class="cal-cell other-month"><div class="cal-date">${daysInPrev - i}</div></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+    const key = `${calYear}-${calMonth+1}-${d}`;
+    const events = calEvents[key] || [];
+    const hwDue = homework.filter(h => {
+      const hd = new Date(h.due);
+      return hd.getDate() === d && hd.getMonth() === calMonth && hd.getFullYear() === calYear && !h.done;
+    });
+    let eventDots = events.map(e => `<div class="cal-event-dot" style="background:${e.color}22;color:${e.color}">${e.text}</div>`).join('');
+    hwDue.forEach(h => {
+      eventDots += `<div class="cal-event-dot" style="background:rgba(252,92,125,0.15);color:var(--accent2)">${h.subject.replace('AP ','')}</div>`;
+    });
+    cells += `<div class="cal-cell ${isToday ? 'today' : ''}"><div class="cal-date">${d}</div>${eventDots}</div>`;
+  }
+  const remaining = 42 - (firstDay + daysInMonth);
+  for (let d = 1; d <= remaining; d++) {
+    cells += `<div class="cal-cell other-month"><div class="cal-date">${d}</div></div>`;
+  }
+  grid.innerHTML = cells;
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+</script>
+</body>
+</html>
